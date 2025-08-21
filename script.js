@@ -481,6 +481,25 @@ function deleteStudent(roll) {
     }
 }
 
+function checkMyFees() {
+    const roll = document.getElementById("student-search-roll").value;
+
+    firebase.database().ref("students/" + roll).once("value").then((snapshot) => {
+        const student = snapshot.val();
+        if (student) {
+            document.getElementById("my-fees-info").innerHTML = `
+                <p><strong>Name:</strong> ${student.name}</p>
+                <p><strong>Route:</strong> ${student.route}</p>
+                <p><strong>Year:</strong> ${student.year}</p>
+                <p><strong>Balance:</strong> ₹${student.balance}</p>
+            `;
+        } else {
+            document.getElementById("my-fees-info").innerHTML = "No record found.";
+        }
+    });
+}
+
+
 // ✅ NEW: Functions for Managing Routes
 function addRoute() {
     const route = document.getElementById("route-name").value;
