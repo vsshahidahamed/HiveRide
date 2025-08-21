@@ -433,6 +433,54 @@ function deleteSchedule(key) {
     }
 }
 
+function saveStudent() {
+    const roll = document.getElementById("student-roll").value;
+    const name = document.getElementById("student-name").value;
+    const route = document.getElementById("student-route").value;
+    const year = document.getElementById("student-year").value;
+    const balance = document.getElementById("student-balance").value;
+
+    firebase.database().ref("students/" + roll).set({
+        rollNo: roll,
+        name: name,
+        route: route,
+        year: year,
+        balance: balance
+    }).then(() => {
+        alert("Student saved successfully!");
+    }).catch((error) => {
+        alert("Error: " + error.message);
+    });
+}
+
+function searchStudent() {
+    const roll = document.getElementById("search-roll").value;
+
+    firebase.database().ref("students/" + roll).once("value").then((snapshot) => {
+        const student = snapshot.val();
+        if (student) {
+            document.getElementById("student-info-result").innerHTML = `
+                <p><strong>Name:</strong> ${student.name}</p>
+                <p><strong>Route:</strong> ${student.route}</p>
+                <p><strong>Year:</strong> ${student.year}</p>
+                <p><strong>Balance:</strong> ₹${student.balance}</p>
+                <button onclick="deleteStudent('${roll}')">Delete</button>
+            `;
+        } else {
+            document.getElementById("student-info-result").innerHTML = "Student not found.";
+        }
+    });
+}
+
+function deleteStudent(roll) {
+    if (confirm("Are you sure you want to delete this student?")) {
+        firebase.database().ref("students/" + roll).remove().then(() => {
+            alert("Student deleted.");
+            document.getElementById("student-info-result").innerHTML = "";
+        });
+    }
+}
+
 // ✅ NEW: Functions for Managing Routes
 function addRoute() {
     const route = document.getElementById("route-name").value;
