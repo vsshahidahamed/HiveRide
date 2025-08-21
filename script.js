@@ -530,6 +530,61 @@ function loadRoutes() {
     });
 }
 
+// Add or update student
+function addOrUpdateStudent() {
+  const rollNo = document.getElementById("rollNo").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const route = document.getElementById("route").value.trim();
+  const balance = parseFloat(document.getElementById("balance").value);
+
+  if (!rollNo || !name || !route || isNaN(balance)) {
+    alert("Please fill all fields correctly");
+    return;
+  }
+
+  db.ref(`students/${rollNo}`).set({ name, route, balance });
+  db.ref(`users/${rollNo}`).set({ role: "Student", rollNo });
+  alert("Student added/updated successfully");
+  clearForm();
+}
+
+// Clear input form
+function clearForm() {
+  document.getElementById("rollNo").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("route").value = "";
+  document.getElementById("balance").value = "";
+}
+
+// Admin search
+function searchStudent() {
+  const roll = document.getElementById("searchRoll").value.trim();
+  const resultDiv = document.getElementById("searchResult");
+
+  db.ref(`students/${roll}`).once('value').then(snapshot => {
+    const s = snapshot.val();
+    if (s) {
+      resultDiv.innerHTML = `Name: ${s.name} <br> Route: ${s.route} <br> Balance: ₹${s.balance}`;
+    } else {
+      resultDiv.innerHTML = "Student not found";
+    }
+  });
+}
+
+// Student search
+function studentSearch() {
+  const roll = document.getElementById("studentSearchRoll").value.trim();
+  const resultDiv = document.getElementById("studentResult");
+
+  db.ref(`students/${roll}`).once('value').then(snapshot => {
+    const s = snapshot.val();
+    if (s) {
+      resultDiv.innerHTML = `Name: ${s.name} <br> Route: ${s.route} <br> Balance: ₹${s.balance}`;
+    } else {
+      resultDiv.innerHTML = "Student not found";
+    }
+  });
+}
 
 // --- 🔥 MAIN APP LOGIC (AUTH STATE CHANGE) ---
 auth.onAuthStateChanged(user => {
