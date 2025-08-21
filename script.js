@@ -13,6 +13,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const db = firebase.database();
 let currentUserRole = null; // Stores the current user's role
 
 // --- 🌐 MAP & TRACKING FUNCTIONS ---
