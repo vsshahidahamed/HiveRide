@@ -498,7 +498,63 @@ function checkMyFees() {
         }
     });
 }
+// Save Student
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      let year = document.getElementById("year").value;
+      let roll = document.getElementById("roll").value;
+      let name = document.getElementById("name").value;
+      let route = document.getElementById("route").value;
+      let balance = document.getElementById("balance").value;
 
+      if(!year || !roll || !name || !route || !balance){
+        alert("⚠️ Please fill all fields");
+        return;
+      }
+
+      // Use year + roll together as document ID
+      let docId = year + "_" + roll;
+
+      db.collection("students").doc(docId).set({
+        year: year,
+        roll: roll,
+        name: name,
+        route: route,
+        balance: balance
+      }).then(() => {
+        alert("✅ Student Saved!");
+      }).catch((error) => {
+        console.error("Error: ", error);
+      });
+    });
+
+    // Search Student
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      let roll = document.getElementById("searchRoll").value;
+      if(!roll){
+        alert("⚠️ Please enter Roll No");
+        return;
+      }
+
+      // Search all students for this roll (ignore year for search)
+      db.collection("students").where("roll","==",roll).get().then((querySnapshot) => {
+        if (!querySnapshot.empty) {
+          let resultText = "";
+          querySnapshot.forEach((doc) => {
+            let data = doc.data();
+            resultText += 
+              "📅 Year: " + data.year + "<br>" +
+              "🎓 Name: " + data.name + "<br>" +
+              "🚌 Route: " + data.route + "<br>" +
+              "💰 Balance: " + data.balance + "<br><hr>";
+          });
+          document.getElementById("result").innerHTML = resultText;
+        } else {
+          document.getElementById("result").innerHTML = "❌ Student not found!";
+        }
+      }).catch((error) => {
+        console.error("Error: ", error);
+      });
+    });
 
 // ✅ NEW: Functions for Managing Routes
 function addRoute() {
