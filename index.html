@@ -44,7 +44,8 @@
     <button onclick="logout()">Logout</button>
     <hr>
 
-    <div id="student-info-section" class="section" style="display: none;">
+<!-- Student Info & Fee Section -->
+    <div id="student-info-section" style="display:none;">
         <h3>🔍 Find Your Bus</h3>
         <select id="bus-selector">
             <option value="">-- Select a Bus --</option>
@@ -66,24 +67,23 @@
           </thead>
           <tbody id="schedule-body-student"></tbody>
         </table>
-    </div>
 
-<hr>
-<h3>💰 Route Fees (View Only)</h3>
-<table id="fees-table-student" border="1">
-    <thead>
-        <tr>
-            <th>Route</th>
-            <th>Distance (km)</th>
-            <th>Fee (₹)</th>
-        </tr>
-    </thead>
-    <tbody id="fees-body-student"></tbody>
-</table>
-       <h3>🔍 Search Your Roll No</h3>
+        <h3>💰 Route Fees</h3>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Distance (km)</th>
+              <th>Fee (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="fees-body-student"></tbody>
+        </table>
+
+        <h3>🔍 Search Your Roll No</h3>
         <input type="text" id="studentSearchRoll" placeholder="Enter Roll No" oninput="studentSearch()">
         <div id="studentResult"></div>
-
+    </div>
     
     <div id="driver-location" class="section" style="display: none;">
         <h3>📡 Send Live Location</h3>
