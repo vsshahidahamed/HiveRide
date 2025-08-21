@@ -487,22 +487,48 @@ function deleteRoute(key) {
     }
 }
 
-// 📥 Load fees for students (view only)
-db.ref("fees").on("value", snapshot => {
-    const tbody = document.getElementById("fees-body-student");
-    if (!tbody) return; // prevent error if student section hidden
-    tbody.innerHTML = "";
-    snapshot.forEach(child => {
-        const fee = child.val();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${fee.route}</td>
-            <td>${fee.distance}</td>
-            <td>₹${fee.amount}</td>
-        `;
-        tbody.appendChild(tr);
+function loadRoutes() {
+    db.ref("routes").on("value", snapshot => {
+        const data = snapshot.val();
+        const adminTbody = document.getElementById("fees-body");
+        const studentTbody = document.getElementById("fees-body-student");
+
+        if (adminTbody) adminTbody.innerHTML = "";
+        if (studentTbody) studentTbody.innerHTML = "";
+
+        if (!data) return;
+
+        for (let key in data) {
+            const item = data[key];
+
+            // Admin (editable)
+            if (adminTbody && currentUserRole === "admin") {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${item.route}</td>
+                    <td>${item.distance}</td>
+                    <td>${item.fee}</td>
+                    <td>
+                        <button onclick="editRoute('${key}')">Edit</button>
+                        <button onclick="deleteRoute('${key}')">❌ Delete</button>
+                    </td>
+                `;
+                adminTbody.appendChild(tr);
+            }
+
+            // Student (view-only)
+            if (studentTbody && currentUserRole === "student") {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${item.route}</td>
+                    <td>${item.distance}</td>
+                    <td>${item.fee}</td>
+                `;
+                studentTbody.appendChild(tr);
+            }
+        }
     });
-});
+}
 
 
 // --- 🔥 MAIN APP LOGIC (AUTH STATE CHANGE) ---
