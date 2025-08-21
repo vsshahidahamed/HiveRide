@@ -35,7 +35,6 @@
         <input id="login-password" type="password" placeholder="Password" />
         <button onclick="login()">Login</button>
     </div>
-
     <button onclick="googleSignIn()">Sign in with Google</button>
     <button onclick="toggleAuth()">Switch to Login/Register</button>
 </div>
@@ -69,6 +68,19 @@
         </table>
     </div>
 
+<hr>
+<h3>💰 Route Fees (View Only)</h3>
+<table id="fees-table-student" border="1">
+    <thead>
+        <tr>
+            <th>Route</th>
+            <th>Distance (km)</th>
+            <th>Fee (₹)</th>
+        </tr>
+    </thead>
+    <tbody id="fees-body-student"></tbody>
+</table>
+    
     <div id="driver-location" class="section" style="display: none;">
         <h3>📡 Send Live Location</h3>
         <p id="driver-bus-no">Loading your assigned bus...</p>
