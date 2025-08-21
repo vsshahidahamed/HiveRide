@@ -135,7 +135,28 @@
         <tbody id="fees-body"></tbody>
     </table>
 </div>
+<h2>Add New Driver</h2>
+<form id="driverForm">
+  <input type="text" id="driverName" placeholder="Driver Name" required>
+  <input type="text" id="busNo" placeholder="Bus No" required>
+  <input type="text" id="route" placeholder="Route" required>
+  <button type="submit">Add Driver</button>
+</form>
 
+<hr>
+
+<h2>Driver Details</h2>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Driver Name</th>
+      <th>Bus No</th>
+      <th>Route</th>
+      <th id="actionHeader" style="display:none;">Action</th>
+    </tr>
+  </thead>
+  <tbody id="driverTableBody"></tbody>
+</table>
         <div class="admin-subsection">
             <h4>🚍 Edit Bus Details</h4>
             <input id="bus-edit-number" placeholder="Bus No (e.g., BUS101)" />
