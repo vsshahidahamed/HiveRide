@@ -44,7 +44,8 @@
     <button onclick="logout()">Logout</button>
     <hr>
 
-    <div id="student-info-section" class="section" style="display: none;">
+<!-- Student Info & Fee Section -->
+    <div id="student-info-section" style="display:none;">
         <h3>🔍 Find Your Bus</h3>
         <select id="bus-selector">
             <option value="">-- Select a Bus --</option>
@@ -66,20 +67,28 @@
           </thead>
           <tbody id="schedule-body-student"></tbody>
         </table>
-    </div>
 
-<hr>
-<h3>💰 Route Fees (View Only)</h3>
-<table id="fees-table-student" border="1">
-    <thead>
-        <tr>
-            <th>Route</th>
-            <th>Distance (km)</th>
-            <th>Fee (₹)</th>
-        </tr>
-    </thead>
-    <tbody id="fees-body-student"></tbody>
-</table>
+        <h3>💰 Route Fees</h3>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Distance (km)</th>
+              <th>Fee (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="fees-body-student"></tbody>
+        </table>
+
+<h3>💳 Check Fee Balance</h3>
+<input id="student-search-roll" placeholder="Enter Your Roll No" />
+<button onclick="checkMyFees()">Check</button>
+<div id="my-fees-info"></div>
+        
+        <h3>🔍 Search Your Roll No</h3>
+        <input type="text" id="studentSearchRoll" placeholder="Enter Roll No" oninput="studentSearch()">
+        <div id="studentResult"></div>
+    </div>
     
     <div id="driver-location" class="section" style="display: none;">
         <h3>📡 Send Live Location</h3>
@@ -147,6 +156,17 @@
         <tbody id="fees-body"></tbody>
     </table>
 </div>
+<h4>👩‍🎓 Add / Edit Student Fee Info</h4>
+<div class="form-container">
+    <input id="student-roll" placeholder="Roll No" />
+    <input id="student-name" placeholder="Student Name" />
+    <input id="student-route" placeholder="Route" />
+    <input id="student-year" placeholder="Year" />
+    <input id="student-balance" placeholder="Balance Fee (₹)" />
+    <button id="saveBtn">Save Student</button>
+</div>
+
+        
 <h2>Add New Driver</h2>
 <form id="driverForm">
   <input type="text" id="driverName" placeholder="Driver Name" required>
