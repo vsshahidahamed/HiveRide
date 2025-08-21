@@ -487,6 +487,23 @@ function deleteRoute(key) {
     }
 }
 
+// 📥 Load fees for students (view only)
+db.ref("fees").on("value", snapshot => {
+    const tbody = document.getElementById("fees-body-student");
+    if (!tbody) return; // prevent error if student section hidden
+    tbody.innerHTML = "";
+    snapshot.forEach(child => {
+        const fee = child.val();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${fee.route}</td>
+            <td>${fee.distance}</td>
+            <td>₹${fee.amount}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+});
+
 
 // --- 🔥 MAIN APP LOGIC (AUTH STATE CHANGE) ---
 auth.onAuthStateChanged(user => {
