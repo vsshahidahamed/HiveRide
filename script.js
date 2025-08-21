@@ -12,7 +12,7 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.database();
+const db = firebase.firestore();
 let currentUserRole = null; // Stores the current user's role
 
 // --- 🌐 MAP & TRACKING FUNCTIONS ---
@@ -535,26 +535,28 @@ function checkMyFees() {
         return;
       }
 
-      // Search all students for this roll (ignore year for search)
-      db.collection("students").where("roll","==",roll).get().then((querySnapshot) => {
-        if (!querySnapshot.empty) {
-          let resultText = "";
-          querySnapshot.forEach((doc) => {
-            let data = doc.data();
-            resultText += 
-              "📅 Year: " + data.year + "<br>" +
-              "🎓 Name: " + data.name + "<br>" +
-              "🚌 Route: " + data.route + "<br>" +
-              "💰 Balance: " + data.balance + "<br><hr>";
-          });
-          document.getElementById("result").innerHTML = resultText;
-        } else {
-          document.getElementById("result").innerHTML = "❌ Student not found!";
-        }
-      }).catch((error) => {
-        console.error("Error: ", error);
-      });
+      // Search all students for this roll 
+        // Search all students for this roll
+  firebase.database().ref("students").once("value").then((snapshot) => {
+    let found = false;
+    let resultText = "";
+
+    snapshot.forEach(child => {
+      let data = child.val();
+      if (data.roll === roll) {
+        found = true;
+        resultText += 
+          "📅 Year: " + data.year + "<br>" +
+          "🎓 Name: " + data.name + "<br>" +
+          "🚌 Route: " + data.route + "<br>" +
+          "💰 Balance: " + data.balance + "<br><hr>";
+      }
     });
+
+    document.getElementById("result").innerHTML = 
+      found ? resultText : "❌ Student not found!";
+  });
+});
 
 // ✅ NEW: Functions for Managing Routes
 function addRoute() {
