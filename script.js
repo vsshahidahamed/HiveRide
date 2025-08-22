@@ -224,22 +224,37 @@ document.getElementById("bus-selector").addEventListener("change", function() {
 });
 
 function saveStudent() {
-    const roll = document.getElementById("student-roll").value;
-    const name = document.getElementById("student-name").value;
-    const route = document.getElementById("student-route").value;
-    const year = document.getElementById("student-year").value;
-    const balance = document.getElementById("student-balance").value;
+    const rollNo = document.getElementById("rollNo").value;
+    const name = document.getElementById("studentName").value;
+    const route = document.getElementById("studentRoute").value;
+    const distance = document.getElementById("studentDistance").value;
+    const fee = document.getElementById("studentFee").value;
+    const year = document.getElementById("studentYear").value;
 
-    firebase.database().ref("students/" + roll).set({
-        rollNo: roll,
+    if (!rollNo || !name || !route || !fee || !year) {
+        alert("⚠️ Please fill all fields!");
+        return;
+    }
+
+    firebase.database().ref("students/" + rollNo).set({
+        rollNo: rollNo,
         name: name,
         route: route,
-        year: year,
-        balance: balance
-    }).then(() => {
-        alert("Student saved successfully!");
-    }).catch((error) => {
-        alert("Error: " + error.message);
+        distance: distance,
+        fee: fee,
+        year: year
+    })
+    .then(() => {
+        alert("✅ Student saved successfully!");
+        document.getElementById("rollNo").value = "";
+        document.getElementById("studentName").value = "";
+        document.getElementById("studentRoute").value = "";
+        document.getElementById("studentDistance").value = "";
+        document.getElementById("studentFee").value = "";
+        document.getElementById("studentYear").value = "";
+    })
+    .catch((error) => {
+        alert("❌ Error saving student: " + error.message);
     });
 }
 
