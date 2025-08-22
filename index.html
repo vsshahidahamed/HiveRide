@@ -23,7 +23,7 @@
         <input id="reg-password" type="password" placeholder="Password" />
         <select id="reg-role">
             <option value="student">Student</option>
-            <option value="admin-user">AdminUser</option>
+            
             <option value="driver">Driver</option>
         </select>
         <button onclick="register()">Register</button>
@@ -35,6 +35,7 @@
         <input id="login-password" type="password" placeholder="Password" />
         <button onclick="login()">Login</button>
     </div>
+
     <button onclick="googleSignIn()">Sign in with Google</button>
     <button onclick="toggleAuth()">Switch to Login/Register</button>
 </div>
@@ -67,20 +68,29 @@
           <tbody id="schedule-body-student"></tbody>
         </table>
     </div>
-
-<hr>
-<h3>💰 Route Fees (View Only)</h3>
-<table id="fees-table-student" border="1">
-    <thead>
+    <hr>
+    <h3>💰 Route Fees (View Only)</h3>
+    <table id="fees-table-student" border="1">
+     <thead>
         <tr>
             <th>Route</th>
             <th>Distance (km)</th>
             <th>Fee (₹)</th>
         </tr>
-    </thead>
-    <tbody id="fees-body-student"></tbody>
-</table>
-    
+     </thead>
+     <tbody id="fees-body-student"></tbody>
+    </table>
+
+    <h3>💳 Check Fee Balance</h3>
+    <input id="student-search-roll" placeholder="Enter Your Roll No" />
+    <button onclick="checkMyFees()">Check</button>
+    <div id="my-fees-info"></div>
+        
+        <h3>🔍 Search Your Roll No</h3>
+        <input type="text" id="studentSearchRoll" placeholder="Enter Roll No" oninput="studentSearch()">
+        <div id="studentResult"></div>
+    </div>
+
     <div id="driver-location" class="section" style="display: none;">
         <h3>📡 Send Live Location</h3>
         <p id="driver-bus-no">Loading your assigned bus...</p>
@@ -147,6 +157,20 @@
         <tbody id="fees-body"></tbody>
     </table>
 </div>
+<h4>👩‍🎓 Add / Edit Student Fee Info</h4>
+<div class="form-container">
+    <input id="student-roll" placeholder="Roll No" />
+    <input id="student-name" placeholder="Student Name" />
+    <input id="student-route" placeholder="Route" />
+    <input id="student-year" placeholder="Year" />
+    <input id="student-balance" placeholder="Balance Fee (₹)" />
+    <button id="saveBtn">Save Student</button>
+</div>
+<h3>💳 Check Fee Balance</h3>
+    <input id="student-search-roll" placeholder="Enter Your Roll No" />
+    <button onclick="checkMyFees()">Check</button>
+    <div id="my-fees-info"></div>
+
 <h2>Add New Driver</h2>
 <form id="driverForm">
   <input type="text" id="driverName" placeholder="Driver Name" required>
@@ -156,7 +180,6 @@
 </form>
 
 <hr>
-
 <h2>Driver Details</h2>
 <table border="1">
   <thead>
@@ -178,7 +201,7 @@
             <button onclick="editBusDetails()">Save Bus Details</button>
         </div>
     </div>
-    <select id="bus-selector">
+        <select id="bus-selector">
             <option value="">-- Select a Bus --</option>
             <option value="Bus1">Bus 1</option>
             <option value="Bus2">Bus 2</option>
@@ -204,4 +227,4 @@
 <script src="script.js"></script>
 
 </body>
-</html>
+    </html>
