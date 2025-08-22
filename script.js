@@ -26,7 +26,24 @@ function initMap() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 }
-
+firebase.auth().createUserWithEmailAndPassword(email, password)
+  .then((userCredential) => {
+      // Registration successful
+  })
+  .catch((error) => {
+      if (error.code === 'auth/email-already-in-use') {
+          // Instead of showing error, log them in
+          firebase.auth().signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // Logged in successfully
+            })
+            .catch((err) => {
+                alert("Wrong password, please try again!");
+            });
+      } else {
+          alert(error.message);
+      }
+  });
 function trackAllBuses() {
     const busesRef = db.ref("buses");
     busesRef.on("value", snapshot => {
