@@ -47,87 +47,7 @@ function updateBusMarker(busId, lat, lng) {
             .bindPopup(`<b>Bus: ${busId}</b>`);
     }
 }
-const driverTableBody = document.getElementById("driverTableBody");
 
-// Listen for drivers in Firebase
-db.ref("drivers").on("value", (snapshot) => {
-  driverTableBody.innerHTML = "";
-  snapshot.forEach((child) => {
-    let driver = child.val();
-    let key = child.key;
-
-    let row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td contenteditable="false">${driver.name}</td>
-      <td contenteditable="false">${driver.busNo}</td>
-      <td contenteditable="false">${driver.route}</td>
-      <td class="actionCell" style="display:none;">
-        <button onclick="editDriver('${key}', this)">Edit</button>
-        <button onclick="deleteDriver('${key}')">Delete</button>
-      </td>
-    `;
-
-    driverTableBody.appendChild(row);
-  });
-
-  // If admin is logged in → show action column
-  if (userRole === "admin") {
-    document.getElementById("actionHeader").style.display = "block";
-    document.querySelectorAll(".actionCell").forEach(cell => {
-      cell.style.display = "block";
-    });
-  }
-});
-
-// Add Driver (same as before)
-const driverForm = document.getElementById("driverForm");
-if (driverForm) {
-  driverForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    let name = document.getElementById("driverName").value;
-    let busNo = document.getElementById("busNo").value;
-    let route = document.getElementById("route").value;
-
-    db.ref("drivers").push({ name, busNo, route });
-
-    driverForm.reset();
-  });
-}
-
-// Edit Driver
-function editDriver(key, btn) {
-  let row = btn.parentElement.parentElement;
-  let tds = row.querySelectorAll("td");
-
-  if (btn.innerText === "Edit") {
-    // Enable editing
-    tds[0].contentEditable = "true";
-    tds[1].contentEditable = "true";
-    tds[2].contentEditable = "true";
-    btn.innerText = "Save";
-  } else {
-    // Save to Firebase
-    let updated = {
-      name: tds[0].innerText,
-      busNo: tds[1].innerText,
-      route: tds[2].innerText
-    };
-
-    db.ref("drivers/" + key).set(updated);
-    tds[0].contentEditable = "false";
-    tds[1].contentEditable = "false";
-    tds[2].contentEditable = "false";
-    btn.innerText = "Edit";
-  }
-}
-
-// Delete Driver
-function deleteDriver(key) {
-  if (confirm("Are you sure you want to delete this driver?")) {
-    db.ref("drivers/" + key).remove();
-  }
-}
 
 // --- 👤 AUTHENTICATION FUNCTIONS ---
 function toggleAuth() {
@@ -286,8 +206,193 @@ document.getElementById("bus-selector").addEventListener("change", function() {
     }
 });
 
+function saveStudent() {
+    const roll = document.getElementById("student-roll").value;
+    const name = document.getElementById("student-name").value;
+    const route = document.getElementById("student-route").value;
+    const year = document.getElementById("student-year").value;
+    const balance = document.getElementById("student-balance").value;
 
-// --- ⚙️ ADMIN & SCHEDULE FUNCTIONS ---
+    firebase.database().ref("students/" + roll).set({
+        rollNo: roll,
+        name: name,
+        route: route,
+        year: year,
+        balance: balance
+    }).then(() => {
+        alert("Student saved successfully!");
+    }).catch((error) => {
+        alert("Error: " + error.message);
+    });
+}
+
+function searchStudent() {
+    const roll = document.getElementById("search-roll").value;
+
+    firebase.database().ref("students/" + roll).once("value").then((snapshot) => {
+        const student = snapshot.val();
+        if (student) {
+            document.getElementById("student-info-result").innerHTML = `
+                <p><strong>Name:</strong> ${student.name}</p>
+                <p><strong>Route:</strong> ${student.route}</p>
+                <p><strong>Year:</strong> ${student.year}</p>
+                <p><strong>Balance:</strong> ₹${student.balance}</p>
+                <button onclick="deleteStudent('${roll}')">Delete</button>
+            `;
+        } else {
+            document.getElementById("student-info-result").innerHTML = "Student not found.";
+        }
+    });
+}
+
+function deleteStudent(roll) {
+    if (confirm("Are you sure you want to delete this student?")) {
+        firebase.database().ref("students/" + roll).remove().then(() => {
+            alert("Student deleted.");
+            document.getElementById("student-info-result").innerHTML = "";
+        });
+    }
+}
+
+function checkMyFees() {
+    const roll = document.getElementById("student-search-roll").value;
+
+    firebase.database().ref("students/" + roll).once("value").then((snapshot) => {
+        const student = snapshot.val();
+        if (student) {
+            document.getElementById("my-fees-info").innerHTML = `
+                <p><strong>Name:</strong> ${student.name}</p>
+                <p><strong>Route:</strong> ${student.route}</p>
+                <p><strong>Year:</strong> ${student.year}</p>
+                <p><strong>Balance:</strong> ₹${student.balance}</p>
+            `;
+        } else {
+            document.getElementById("my-fees-info").innerHTML = "No record found.";
+        }
+    });
+}
+
+
+// Save Student
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      let year = document.getElementById("year").value;
+      let roll = document.getElementById("roll").value;
+      let name = document.getElementById("name").value;
+      let route = document.getElementById("route").value;
+      let balance = document.getElementById("balance").value;
+
+      if(!year || !roll || !name || !route || !balance){
+        alert("⚠️ Please fill all fields");
+        return;
+      }
+
+      // Use year + roll together as document ID
+      let docId = year + "_" + roll;
+
+      db.collection("students").doc(docId).set({
+        year: year,
+        roll: roll,
+        name: name,
+        route: route,
+        balance: balance
+      }).then(() => {
+        alert("✅ Student Saved!");
+      }).catch((error) => {
+        console.error("Error: ", error);
+      });
+    });
+
+    // Search Student
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      let roll = document.getElementById("searchRoll").value;
+      if(!roll){
+        alert("⚠️ Please enter Roll No");
+        return;
+      }
+
+      // Search all students for this roll 
+        // Search all students for this roll
+  firebase.database().ref("students").once("value").then((snapshot) => {
+    let found = false;
+    let resultText = "";
+
+    snapshot.forEach(child => {
+      let data = child.val();
+      if (data.roll === roll) {
+        found = true;
+        resultText += 
+          "📅 Year: " + data.year + "<br>" +
+          "🎓 Name: " + data.name + "<br>" +
+          "🚌 Route: " + data.route + "<br>" +
+          "💰 Balance: " + data.balance + "<br><hr>";
+      }
+    });
+
+    document.getElementById("result").innerHTML = 
+      found ? resultText : "❌ Student not found!";
+  });
+});
+
+    // ✅ Save Student Function
+    function saveStudent() {
+        const roll = document.getElementById("student-roll").value.trim();
+        const name = document.getElementById("student-name").value.trim();
+        const route = document.getElementById("student-route").value.trim();
+        const year = document.getElementById("student-year").value.trim();
+        const balance = document.getElementById("student-balance").value.trim();
+
+        if (!roll || !name || !route || !year || !balance) {
+            alert("⚠️ Please fill all fields before saving!");
+            return;
+        }
+
+        firebase.database().ref("students/" + roll).set({
+            rollNo: roll,
+            name: name,
+            route: route,
+            year: year,
+            balance: balance
+        }).then(() => {
+            alert("✅ Student saved successfully!");
+
+            // Clear input fields after saving
+            document.getElementById("student-roll").value = "";
+            document.getElementById("student-name").value = "";
+            document.getElementById("student-route").value = "";
+            document.getElementById("student-year").value = "";
+            document.getElementById("student-balance").value = "";
+
+            // Refresh student list in table
+            loadStudents();
+        }).catch((error) => {
+            alert("❌ Error: " + error.message);
+        });
+    }
+
+    
+    function loadStudents() {
+        const tbody = document.getElementById("fees-body");
+        tbody.innerHTML = ""; // Clear existing rows
+
+        firebase.database().ref("students").once("value", (snapshot) => {
+            snapshot.forEach((child) => {
+                const s = child.val();
+                const row = `
+                    <tr>
+                        <td>${s.rollNo}</td>
+                        <td>${s.name}</td>
+                        <td>${s.route}</td>
+                        <td>${s.year}</td>
+                        <td>${s.balance}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        });
+    }
+
+   
+
 function editBusDetails() {
     const busNo = document.getElementById("bus-edit-number").value;
     const route = document.getElementById("bus-edit-route").value;
@@ -433,130 +538,7 @@ function deleteSchedule(key) {
     }
 }
 
-function saveStudent() {
-    const roll = document.getElementById("student-roll").value;
-    const name = document.getElementById("student-name").value;
-    const route = document.getElementById("student-route").value;
-    const year = document.getElementById("student-year").value;
-    const balance = document.getElementById("student-balance").value;
 
-    firebase.database().ref("students/" + roll).set({
-        rollNo: roll,
-        name: name,
-        route: route,
-        year: year,
-        balance: balance
-    }).then(() => {
-        alert("Student saved successfully!");
-    }).catch((error) => {
-        alert("Error: " + error.message);
-    });
-}
-
-function searchStudent() {
-    const roll = document.getElementById("search-roll").value;
-
-    firebase.database().ref("students/" + roll).once("value").then((snapshot) => {
-        const student = snapshot.val();
-        if (student) {
-            document.getElementById("student-info-result").innerHTML = `
-                <p><strong>Name:</strong> ${student.name}</p>
-                <p><strong>Route:</strong> ${student.route}</p>
-                <p><strong>Year:</strong> ${student.year}</p>
-                <p><strong>Balance:</strong> ₹${student.balance}</p>
-                <button onclick="deleteStudent('${roll}')">Delete</button>
-            `;
-        } else {
-            document.getElementById("student-info-result").innerHTML = "Student not found.";
-        }
-    });
-}
-
-function deleteStudent(roll) {
-    if (confirm("Are you sure you want to delete this student?")) {
-        firebase.database().ref("students/" + roll).remove().then(() => {
-            alert("Student deleted.");
-            document.getElementById("student-info-result").innerHTML = "";
-        });
-    }
-}
-
-function checkMyFees() {
-    const roll = document.getElementById("student-search-roll").value;
-
-    firebase.database().ref("students/" + roll).once("value").then((snapshot) => {
-        const student = snapshot.val();
-        if (student) {
-            document.getElementById("my-fees-info").innerHTML = `
-                <p><strong>Name:</strong> ${student.name}</p>
-                <p><strong>Route:</strong> ${student.route}</p>
-                <p><strong>Year:</strong> ${student.year}</p>
-                <p><strong>Balance:</strong> ₹${student.balance}</p>
-            `;
-        } else {
-            document.getElementById("my-fees-info").innerHTML = "No record found.";
-        }
-    });
-}
-// Save Student
-    document.getElementById("saveBtn").addEventListener("click", () => {
-      let year = document.getElementById("year").value;
-      let roll = document.getElementById("roll").value;
-      let name = document.getElementById("name").value;
-      let route = document.getElementById("route").value;
-      let balance = document.getElementById("balance").value;
-
-      if(!year || !roll || !name || !route || !balance){
-        alert("⚠️ Please fill all fields");
-        return;
-      }
-
-      // Use year + roll together as document ID
-      let docId = year + "_" + roll;
-
-      db.collection("students").doc(docId).set({
-        year: year,
-        roll: roll,
-        name: name,
-        route: route,
-        balance: balance
-      }).then(() => {
-        alert("✅ Student Saved!");
-      }).catch((error) => {
-        console.error("Error: ", error);
-      });
-    });
-
-    // Search Student
-    document.getElementById("searchBtn").addEventListener("click", () => {
-      let roll = document.getElementById("searchRoll").value;
-      if(!roll){
-        alert("⚠️ Please enter Roll No");
-        return;
-      }
-
-      // Search all students for this roll 
-        // Search all students for this roll
-  firebase.database().ref("students").once("value").then((snapshot) => {
-    let found = false;
-    let resultText = "";
-
-    snapshot.forEach(child => {
-      let data = child.val();
-      if (data.roll === roll) {
-        found = true;
-        resultText += 
-          "📅 Year: " + data.year + "<br>" +
-          "🎓 Name: " + data.name + "<br>" +
-          "🚌 Route: " + data.route + "<br>" +
-          "💰 Balance: " + data.balance + "<br><hr>";
-      }
-    });
-
-    document.getElementById("result").innerHTML = 
-      found ? resultText : "❌ Student not found!";
-  });
-});
 
 // ✅ NEW: Functions for Managing Routes
 function addRoute() {
@@ -612,104 +594,7 @@ function deleteRoute(key) {
     }
 }
 
-function loadRoutes() {
-    db.ref("routes").on("value", snapshot => {
-        const data = snapshot.val();
-        const adminTbody = document.getElementById("fees-body");
-        const studentTbody = document.getElementById("fees-body-student");
 
-        if (adminTbody) adminTbody.innerHTML = "";
-        if (studentTbody) studentTbody.innerHTML = "";
-
-        if (!data) return;
-
-        for (let key in data) {
-            const item = data[key];
-
-            // Admin (editable)
-            if (adminTbody && currentUserRole === "admin") {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${item.route}</td>
-                    <td>${item.distance}</td>
-                    <td>${item.fee}</td>
-                    <td>
-                        <button onclick="editRoute('${key}')">Edit</button>
-                        <button onclick="deleteRoute('${key}')">❌ Delete</button>
-                    </td>
-                `;
-                adminTbody.appendChild(tr);
-            }
-
-            // Student (view-only)
-            if (studentTbody && currentUserRole === "student") {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${item.route}</td>
-                    <td>${item.distance}</td>
-                    <td>${item.fee}</td>
-                `;
-                studentTbody.appendChild(tr);
-            }
-        }
-    });
-}
-
-// Add or update student
-function addOrUpdateStudent() {
-  const rollNo = document.getElementById("rollNo").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const route = document.getElementById("route").value.trim();
-  const balance = parseFloat(document.getElementById("balance").value);
-
-  if (!rollNo || !name || !route || isNaN(balance)) {
-    alert("Please fill all fields correctly");
-    return;
-  }
-
-  db.ref(`students/${rollNo}`).set({ name, route, balance });
-  db.ref(`users/${rollNo}`).set({ role: "Student", rollNo });
-  alert("Student added/updated successfully");
-  clearForm();
-}
-
-// Clear input form
-function clearForm() {
-  document.getElementById("rollNo").value = "";
-  document.getElementById("name").value = "";
-  document.getElementById("route").value = "";
-  document.getElementById("balance").value = "";
-}
-
-// Admin search
-function searchStudent() {
-  const roll = document.getElementById("searchRoll").value.trim();
-  const resultDiv = document.getElementById("searchResult");
-
-  db.ref(`students/${roll}`).once('value').then(snapshot => {
-    const s = snapshot.val();
-    if (s) {
-      resultDiv.innerHTML = `Name: ${s.name} <br> Route: ${s.route} <br> Balance: ₹${s.balance}`;
-    } else {
-      resultDiv.innerHTML = "Student not found";
-    }
-  });
-}
-
-// Student search
-function studentSearch() {
-  const roll = document.getElementById("studentSearchRoll").value.trim();
-  const resultDiv = document.getElementById("studentResult");
-
-  db.ref(`students/${roll}`).once('value').then(snapshot => {
-    const s = snapshot.val();
-    if (s) {
-      resultDiv.innerHTML = `Name: ${s.name} <br> Route: ${s.route} <br> Balance: ₹${s.balance}`;
-    } else {
-      resultDiv.innerHTML = "Student not found";
-    }
-  });
-}
 
 // --- 🔥 MAIN APP LOGIC (AUTH STATE CHANGE) ---
 auth.onAuthStateChanged(user => {
