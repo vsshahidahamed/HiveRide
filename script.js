@@ -238,19 +238,59 @@ function sendLocation() {
   }
 }
 
-// ---------------- MAP ----------------
+let map;
+let busMarkers = {}; // store markers by bus number
 
-const map = L.map("map").setView([20, 77], 5);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19
-}).addTo(map);
+function initMap() {
+  map = L.map("map").setView([20.5937, 78.9629], 5); // India center
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+}
 
-const marker = L.marker([20, 77]).addTo(map);
+// Load all buses and update markers
+function loadBusLocations() {
+  firebase.database().ref("busLocations").on("value", snapshot => {
+    // Remove old markers
+    Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
+    busMarkers = {};
 
-db.ref("liveLocations/driver1").on("value", snap => {
-  if (snap.exists()) {
-    const { lat, lng } = snap.val();
-    marker.setLatLng([lat, lng]);
-    map.setView([lat, lng], 13);
+    snapshot.forEach(bus => {
+      let data = bus.val();
+      if (data.lat && data.lng) {
+        let marker = L.marker([data.lat, data.lng]).bindPopup(
+          `🚌 ${bus.key}<br>Driver: ${data.driver}`
+        );
+        busMarkers[bus.key] = marker;
+
+        // If "All" selected → show all markers
+        if (document.getElementById("busSelect").value === "all") {
+          marker.addTo(map);
+        }
+      }
+    });
+  });
+}
+
+// Filter by selected bus
+document.getElementById("busSelect").addEventListener("change", e => {
+  let selected = e.target.value;
+
+  // Remove all markers first
+  Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
+
+  if (selected === "all") {
+    // show all buses
+    Object.values(busMarkers).forEach(marker => marker.addTo(map));
+  } else if (busMarkers[selected]) {
+    // show only selected bus
+    busMarkers[selected].addTo(map);
+    map.setView(busMarkers[selected].getLatLng(), 13);
   }
 });
+
+// Init
+window.onload = function () {
+  initMap();
+  loadBusLocations();
+};
