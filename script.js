@@ -151,7 +151,7 @@ db.ref("schedules").on("value", snap => {
       <td>${s.driver}</td>
       <td>${s.mobile}</td>
       <td><button onclick="editSchedule('${child.key}')">✏️Edit</button></td>
-      <td><button onclick="deleteSchedule('${child.key}')">❌Delete</button></td>
+      
     </tr>`;
   });
   document.getElementById("schedule-body").innerHTML = body;
@@ -199,7 +199,7 @@ db.ref("routes").on("value", snap => {
       <td>${r.distance}</td>
       <td>${r.fee}</td>
       <td><button onclick="editRoute('${child.key}')">✏️Edit</button></td>
-      <td><button onclick="deleteRoute('${child.key}')">❌Delete</button></td>
+      
     </tr>`;
   });
   document.getElementById("fees-body").innerHTML = body;
@@ -287,7 +287,7 @@ db.ref("drivers").on("value", snap => {
       <td>${d.busNo}</td>
       <td>${d.route}</td>
       <td><button onclick="editDriver('${child.key}')">✏️Edit</button></td>
-      <td><button onclick="deleteDriver('${child.key}')">❌Delete</button></td>
+      
     </tr>`;
   });
   document.getElementById("driverTableBody").innerHTML = body;
