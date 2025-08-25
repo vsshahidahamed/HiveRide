@@ -323,3 +323,15 @@ p {
   border-color: #007bff;   /* blue border */
   box-shadow: 0 0 8px rgba(0, 123, 255, 0.6); /* glowing effect */
 }
+#my-fees-info{
+  text-align: left;       /* align text to left */
+  font-size: 20px;        /* bigger font */
+  line-height: 1.6;       /* spacing between lines */
+  padding: 10px;          /* inner space */
+  border: 1px solid #ccc; /* light border */
+  border-radius: 6px;     /* rounded corners */
+  background: #f9f9f9;    /* light background */
+  white-space: pre-line;  /* keep line breaks (\n) */
+  width: 90%;             /* not full screen */
+  margin: 10px auto;      /* center block but text left */
+}
