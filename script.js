@@ -316,53 +316,64 @@ function sendLocation() {
 let map;
 let busMarkers = {}; // store markers by bus number
 
-function initMap() {
-  var map = L.map("map").setView([20.5937, 78.9629], 5); // India center
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
-}
+    // ✅ Initialize Map
+    const map = L.map('map').setView([12.9716, 77.5946], 12); // Default location
 
-// Load all buses and update markers
-function loadBusLocations() {
-  firebase.database().ref("busLocations").on("value", snapshot => {
-    // Remove old markers
-    Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
-    busMarkers = {};
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-    snapshot.forEach(bus => {
-      let data = bus.val();
-      if (data.lat && data.lng) {
-        let marker = L.marker([data.lat, data.lng]).bindPopup(
-          `🚌 ${bus.key}<br>Driver: ${data.driver}`
-        );
-        busMarkers[bus.key] = marker;
+    // ✅ Marker for selected bus
+    let activeMarker = null;
 
-        // If "All" selected → show all markers
-        if (document.getElementById("busSelect").value === "all") {
-          marker.addTo(map);
-        }
+    // ✅ Populate dropdown with bus list
+    const busRef = db.ref("buses");
+
+    busRef.on("value", (snapshot) => {
+      const buses = snapshot.val();
+      const busSelect = document.getElementById("busSelect");
+
+      // Clear old options
+      busSelect.innerHTML = `<option value="">--Choose Bus--</option>`;
+
+      for (let busId in buses) {
+        let option = document.createElement("option");
+        option.value = busId;
+        option.textContent = "Bus " + busId;
+        busSelect.appendChild(option);
       }
     });
-  });
-}
 
-// Filter by selected bus
-document.getElementById("busSelect").addEventListener("change", e => {
-  let selected = e.target.value;
+    // ✅ When user selects a bus
+    document.getElementById("busSelect").addEventListener("change", (e) => {
+      const selectedBus = e.target.value;
 
-  // Remove all markers first
-  Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
+      if (!selectedBus) {
+        if (activeMarker) {
+          map.removeLayer(activeMarker);
+          activeMarker = null;
+        }
+        return;
+      }
 
-  if (selected === "all") {
-    // show all buses
-    Object.values(busMarkers).forEach(marker => marker.addTo(map));
-  } else if (busMarkers[selected]) {
-    // show only selected bus
-    busMarkers[selected].addTo(map);
-    map.setView(busMarkers[selected].getLatLng(), 13);
-  }
-});
+      // Listen to only that bus
+      db.ref("buses/" + selectedBus).on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        const { lat, lng } = data;
+
+        if (activeMarker) {
+          activeMarker.setLatLng([lat, lng]);
+        } else {
+          activeMarker = L.marker([lat, lng]).addTo(map)
+            .bindPopup(`Bus ${selectedBus}`);
+        }
+
+        map.setView([lat, lng], 15); // Center map on bus
+      });
+    });
 
 // Init
 window.onload = function () {
