@@ -50,19 +50,15 @@ function login() {
 }
 
 function googleSignIn() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider)
-    .then(result => {
-      db.ref("users/" + result.user.uid).once("value").then(snap => {
-        if (!snap.exists()) {
-          db.ref("users/" + result.user.uid).set({
-            email: result.user.email,
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).then(result => {
+        const user = result.user;
+        // Set new users from Google Sign-In to "student" role by default
+        db.ref("users/" + user.uid).set({
+            email: user.email,
             role: "student"
-          });
-        }
-      });
-    })
-    .catch(err => alert(err.message));
+        });
+    }).catch(error => alert("Google Sign-in error: " + error.message));
 }
 
 function logout() {
@@ -80,9 +76,24 @@ auth.onAuthStateChanged(user => {
       const role = snap.val().role;
       document.getElementById("user-role").innerText = role.toUpperCase();
 
-      document.getElementById("studentSection").style.display = (role === "student") ? "block" : "none";
-      document.getElementById("adminSection").style.display = (role === "admin") ? "block" : "none";
-      document.getElementById("driverSection").style.display = (role === "driver") ? "block" : "none";
+      // Default hide all
+      document.getElementById("studentSection").style.display = "none";
+      document.getElementById("adminSection").style.display = "none";
+      document.getElementById("driverSection").style.display = "none";
+
+      if (role === "student") {
+        document.getElementById("studentSection").style.display = "block";
+
+        // 🔒 Disable editing features for students
+        document.querySelectorAll(".admin-only, .driver-only").forEach(el => {
+          el.style.display = "none";
+        });
+
+      } else if (role === "admin") {
+        document.getElementById("adminSection").style.display = "block";
+      } else if (role === "driver") {
+        document.getElementById("driverSection").style.display = "block";
+      }
     });
   } else {
     document.getElementById("auth-section").style.display = "block";
@@ -101,7 +112,32 @@ function addSchedule() {
   const mobile = document.getElementById("driver-mobile").value;
 
   db.ref("schedules/" + busNo).set({ route, morning, evening, driver, mobile });
+  clearScheduleForm();
 }
+
+function editSchedule(busNo) {
+  db.ref("schedules/" + busNo).once("value").then(snap => {
+    if (snap.exists()) {
+      const s = snap.val();
+      document.getElementById("bus-no").value = busNo;
+      document.getElementById("bus-route").value = s.route;
+      document.getElementById("morning-time").value = s.morning;
+      document.getElementById("evening-time").value = s.evening;
+      document.getElementById("driver-name").value = s.driver;
+      document.getElementById("driver-mobile").value = s.mobile;
+    }
+  });
+}
+
+function clearScheduleForm() {
+  document.getElementById("bus-no").value = "";
+  document.getElementById("bus-route").value = "";
+  document.getElementById("morning-time").value = "";
+  document.getElementById("evening-time").value = "";
+  document.getElementById("driver-name").value = "";
+  document.getElementById("driver-mobile").value = "";
+}
+
 
 db.ref("schedules").on("value", snap => {
   let body = "";
@@ -114,7 +150,8 @@ db.ref("schedules").on("value", snap => {
       <td>${s.evening}</td>
       <td>${s.driver}</td>
       <td>${s.mobile}</td>
-      <td><button onclick="deleteSchedule('${child.key}')">❌</button></td>
+      <td><button onclick="editSchedule('${child.key}')">✏️Edit</button></td>
+      <td><button onclick="deleteSchedule('${child.key}')">❌Delete</button></td>
     </tr>`;
   });
   document.getElementById("schedule-body").innerHTML = body;
@@ -133,6 +170,24 @@ function addRoute() {
   const fee = document.getElementById("route-fee").value;
 
   db.ref("routes/" + route).set({ distance, fee });
+  clearRouteForm();
+}
+
+function editRoute(route) {
+  db.ref("routes/" + route).once("value").then(snap => {
+    if (snap.exists()) {
+      const r = snap.val();
+      document.getElementById("route-name").value = route;
+      document.getElementById("route-distance").value = r.distance;
+      document.getElementById("route-fee").value = r.fee;
+    }
+  });
+}
+
+function clearRouteForm() {
+  document.getElementById("route-name").value = "";
+  document.getElementById("route-distance").value = "";
+  document.getElementById("route-fee").value = "";
 }
 
 db.ref("routes").on("value", snap => {
@@ -143,7 +198,8 @@ db.ref("routes").on("value", snap => {
       <td>${child.key}</td>
       <td>${r.distance}</td>
       <td>${r.fee}</td>
-      <td><button onclick="deleteRoute('${child.key}')">❌</button></td>
+      <td><button onclick="editRoute('${child.key}')">✏️Edit</button></td>
+      <td><button onclick="deleteRoute('${child.key}')">❌Delete</button></td>
     </tr>`;
   });
   document.getElementById("fees-body").innerHTML = body;
@@ -202,6 +258,24 @@ function addDriver() {
   const route = document.getElementById("route").value;
 
   db.ref("drivers/" + name).set({ busNo, route });
+  clearDriverForm();
+}
+
+function editDriver(name) {
+  db.ref("drivers/" + name).once("value").then(snap => {
+    if (snap.exists()) {
+      const d = snap.val();
+      document.getElementById("driverName").value = name;
+      document.getElementById("busNo").value = d.busNo;
+      document.getElementById("route").value = d.route;
+    }
+  });
+}
+
+function clearDriverForm() {
+  document.getElementById("driverName").value = "";
+  document.getElementById("busNo").value = "";
+  document.getElementById("route").value = "";
 }
 
 db.ref("drivers").on("value", snap => {
@@ -212,7 +286,8 @@ db.ref("drivers").on("value", snap => {
       <td>${child.key}</td>
       <td>${d.busNo}</td>
       <td>${d.route}</td>
-      <td><button onclick="deleteDriver('${child.key}')">❌</button></td>
+      <td><button onclick="editDriver('${child.key}')">✏️Edit</button></td>
+      <td><button onclick="deleteDriver('${child.key}')">❌Delete</button></td>
     </tr>`;
   });
   document.getElementById("driverTableBody").innerHTML = body;
@@ -242,7 +317,7 @@ let map;
 let busMarkers = {}; // store markers by bus number
 
 function initMap() {
-  map = L.map("map").setView([20.5937, 78.9629], 5); // India center
+  var map = L.map("map").setView([20.5937, 78.9629], 5); // India center
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
