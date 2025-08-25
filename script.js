@@ -315,14 +315,14 @@ function sendLocation() {
 
 let map;
 let busMarkers = {}; // store markers by bus number
-
-    // ✅ Initialize Map
-    const map = L.map('map').setView([12.9716, 77.5946], 12); // Default location
-
-    // Add OpenStreetMap tiles
+// --- 🌐 MAP & TRACKING FUNCTIONS ---
+function initMap() {
+    if (map) return;
+    map = L.map('map').setView([12.9165, 79.1325], 12); // Vellore, India coordinates
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
+}
 
     // ✅ Marker for selected bus
     let activeMarker = null;
