@@ -287,7 +287,7 @@ db.ref("drivers").on("value", snap => {
       <td>${d.busNo}</td>
       <td>${d.route}</td>
       <td><button onclick="editDriver('${child.key}')">✏️Edit</button></td>
-      
+      <td><button onclick="deleteDriver('${child.key}')">❌Delete</button></td> 
     </tr>`;
   });
   document.getElementById("driverTableBody").innerHTML = body;
