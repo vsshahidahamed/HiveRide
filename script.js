@@ -64,7 +64,14 @@ function googleSignIn() {
 function logout() {
   auth.signOut();
 }
-
+/* ---------------- LOGOUT (with location stop) ---------------- */
+let watchId = null;
+function logout() {
+  stopLocationSharing(); // stop GPS before logout
+  auth.signOut().then(() => {
+    window.location.href = "login.html";
+  });
+}
 // ---------------- ROLE DASHBOARD ----------------
 
 auth.onAuthStateChanged(user => {
@@ -297,21 +304,6 @@ function deleteDriver(name) {
   db.ref("drivers/" + name).remove();
 }
 
-// ---------------- DRIVER: LIVE LOCATION ----------------
-
-function sendLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      db.ref("liveLocations/driver1").set({ lat, lng, time: Date.now() });
-      document.getElementById("location-status").innerText =
-        `📍 Sent: ${lat}, ${lng}`;
-    });
-  } else {
-    alert("Geolocation not supported");
-  }
-}
 
 
 // =======================
@@ -332,7 +324,35 @@ firebase.auth().onAuthStateChanged(user => {
     });
   }
 });
+/* ---------------- DRIVER: LIVE LOCATION ---------------- */
+function startLocationSharing(busNumber) {
+  if (navigator.geolocation) {
+    watchId = navigator.geolocation.watchPosition(position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
 
+      db.ref("busLocations/" + busNumber).update({
+        lat, lng, lastUpdated: Date.now()
+      });
+
+      document.getElementById("location-status").innerText =
+        `📍 Live: ${lat}, ${lng}`;
+    }, error => {
+      console.error("Geolocation error:", error);
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+  } else {
+    alert("Geolocation not supported!");
+  }
+}
+
+function stopLocationSharing() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    console.log("⛔ Location sharing stopped");
+  }
+        }
+    
 // =======================
 // Leaflet Map
 // =======================
