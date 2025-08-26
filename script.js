@@ -324,142 +324,83 @@ firebase.auth().onAuthStateChanged(user => {
     });
   }
 });
-/* ---------------- DRIVER: LIVE LOCATION ---------------- */
-function startLocationSharing(busNumber) {
-  if (navigator.geolocation) {
-    watchId = navigator.geolocation.watchPosition(position => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
+// ---------------------- ADMIN ----------------------
+function addDriver() {
+  const name = document.getElementById("driverName").value;
+  const route = document.getElementById("route").value;
+  const busNo = document.getElementById("busNo").value;
+  const driverUid = document.getElementById("driverUid").value;
 
-      db.ref("busLocations/" + busNumber).update({
-        lat, lng, lastUpdated: Date.now()
-      });
+  // Save driver info (legacy list)
+  db.ref("drivers/" + name).set({ busNo, route });
 
-      document.getElementById("location-status").innerText =
-        `📍 Live: ${lat}, ${lng}`;
-    }, error => {
-      console.error("Geolocation error:", error);
-    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
-  } else {
-    alert("Geolocation not supported!");
+  // Assign bus to driver account
+  if (driverUid) {
+    db.ref("users/" + driverUid).update({ busNo });
+    alert(`✅ Driver assigned: ${name} → Bus ${busNo}`);
   }
 }
 
-function stopLocationSharing() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-    console.log("⛔ Location sharing stopped");
-  }
-        }
-    
-// =======================
-// Leaflet Map
-// =======================
-let map;
-let busMarkers = {}; // Store markers by bus number
-
-function initMap() {
-  map = L.map("map").setView([12.9165, 79.1325], 12); // India center
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
-}
-
-// =======================
-// Load Bus Locations
-// =======================
-function loadBusLocations() {
-  firebase.database().ref("busLocations").on("value", snapshot => {
-    let busSelect = document.getElementById("busSelect");
-    busSelect.innerHTML = `<option value="all">All Buses</option>`;
-
-    // Remove old markers
-    Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
-    busMarkers = {};
-
-    snapshot.forEach(bus => {
-      let data = bus.val();
-      if (data.lat && data.lng) {
-        // Create marker
-        let marker = L.marker([data.lat, data.lng]).bindPopup(
-          `🚌 ${bus.key}<br>Driver: ${data.driver || "Unknown"}`
-        );
-        busMarkers[bus.key] = marker;
-
-        // Add bus option in dropdown
-        let option = document.createElement("option");
-        option.value = bus.key;
-        option.text = bus.key;
-        busSelect.appendChild(option);
-
-        // Show all if "All" selected
-        if (busSelect.value === "all") {
-          marker.addTo(map);
-        }
-      }
-    });
-  });
-}
-
-// =======================
-// Dropdown Filter
-// =======================
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("busSelect").addEventListener("change", e => {
-    let selected = e.target.value;
-
-    // Remove all markers
-    Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
-
-    if (selected === "all") {
-      Object.values(busMarkers).forEach(marker => marker.addTo(map));
-    } else if (busMarkers[selected]) {
-      busMarkers[selected].addTo(map);
-      map.setView(busMarkers[selected].getLatLng(), 13);
-    }
-  });
-});
-
-// =======================
-// Start Bus Tracking (Admin/Student)
-// =======================
-function startBusTracking() {
-  initMap();
-  loadBusLocations();
-}
-
-// =======================
-// Driver: Send Live Location
-// =======================
-function startDriverLocationUpdate(driverId) {
-  // First get assigned bus number for driver
-  firebase.database().ref("users/" + driverId + "/busNo").once("value").then(snapshot => {
+// ---------------------- DRIVER ----------------------
+function startDriverLocation() {
+  const driverId = window.currentDriverId;
+  db.ref("users/" + driverId + "/busNo").once("value").then(snapshot => {
     let busNo = snapshot.val();
     if (!busNo) {
-      alert("No bus assigned to this driver!");
+      alert("❌ No bus assigned to this driver!");
       return;
     }
-
     if (navigator.geolocation) {
       setInterval(() => {
         navigator.geolocation.getCurrentPosition(position => {
           let lat = position.coords.latitude;
           let lng = position.coords.longitude;
-
-          firebase.database().ref("busLocations/" + busNo).set({
-            lat: lat,
-            lng: lng,
+          db.ref("busLocations/" + busNo).set({
+            lat, lng,
             driver: driverId,
             updatedAt: new Date().toISOString()
           });
         });
-      }, 5000); // every 5 sec update
-    } else {
-      alert("Geolocation is not supported by this browser.");
+      }, 5000);
     }
   });
 }
+
+// ---------------------- STUDENT / ADMIN MAP ----------------------
+function initMapAdmin() {
+  map = L.map("map").setView([20.5937, 78.9629], 5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  db.ref("busLocations").on("value", snapshot => {
+    const buses = snapshot.val() || {};
+    for (let busNo in buses) {
+      const { lat, lng } = buses[busNo];
+      if (!busMarkers[busNo]) {
+        busMarkers[busNo] = L.marker([lat, lng]).addTo(map).bindPopup("Bus " + busNo);
+      } else {
+        busMarkers[busNo].setLatLng([lat, lng]);
+      }
+    }
+  });
+}
+
+function initMapStudent() {
+  mapStudent = L.map("mapStudent").setView([20.5937, 78.9629], 5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapStudent);
+
+  db.ref("busLocations").on("value", snapshot => {
+    const buses = snapshot.val() || {};
+    for (let busNo in buses) {
+      const { lat, lng } = buses[busNo];
+      if (!busMarkers[busNo]) {
+        busMarkers[busNo] = L.marker([lat, lng]).addTo(mapStudent).bindPopup("Bus " + busNo);
+      } else {
+        busMarkers[busNo].setLatLng([lat, lng]);
+      }
+    }
+  });
+}
+
 
 // Init
 window.onload = function () {
