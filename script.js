@@ -340,7 +340,7 @@ let map;
 let busMarkers = {}; // Store markers by bus number
 
 function initMap() {
-  map = L.map("map").setView([20.5937, 78.9629], 5); // India center
+  map = L.map("map").setView([12.9165, 79.1325], 12); // India center
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
