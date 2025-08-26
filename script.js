@@ -313,67 +313,133 @@ function sendLocation() {
   }
 }
 
+
+// =======================
+// Auth State Handling
+// =======================
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    // Get user role from DB
+    firebase.database().ref("users/" + user.uid + "/role").once("value").then(snapshot => {
+      let role = snapshot.val();
+
+      if (role === "admin" || role === "student") {
+        startBusTracking(); // ✅ Start Map when admin/student logs in
+      }
+      if (role === "driver") {
+        startDriverLocationUpdate(user.uid); // ✅ Driver sends live location
+      }
+    });
+  }
+});
+
+// =======================
+// Leaflet Map
+// =======================
 let map;
-let busMarkers = {}; // store markers by bus number
-// --- 🌐 MAP & TRACKING FUNCTIONS ---
+let busMarkers = {}; // Store markers by bus number
+
 function initMap() {
-    if (map) return;
-    map = L.map('map').setView([12.9165, 79.1325], 12); // Vellore, India coordinates
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+  map = L.map("map").setView([20.5937, 78.9629], 5); // India center
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
 }
 
-    // ✅ Marker for selected bus
-    let activeMarker = null;
+// =======================
+// Load Bus Locations
+// =======================
+function loadBusLocations() {
+  firebase.database().ref("busLocations").on("value", snapshot => {
+    let busSelect = document.getElementById("busSelect");
+    busSelect.innerHTML = `<option value="all">All Buses</option>`;
 
-    // ✅ Populate dropdown with bus list
-    const busRef = db.ref("buses");
+    // Remove old markers
+    Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
+    busMarkers = {};
 
-    busRef.on("value", (snapshot) => {
-      const buses = snapshot.val();
-      const busSelect = document.getElementById("busSelect");
+    snapshot.forEach(bus => {
+      let data = bus.val();
+      if (data.lat && data.lng) {
+        // Create marker
+        let marker = L.marker([data.lat, data.lng]).bindPopup(
+          `🚌 ${bus.key}<br>Driver: ${data.driver || "Unknown"}`
+        );
+        busMarkers[bus.key] = marker;
 
-      // Clear old options
-      busSelect.innerHTML = `<option value="">--Choose Bus--</option>`;
-
-      for (let busId in buses) {
+        // Add bus option in dropdown
         let option = document.createElement("option");
-        option.value = busId;
-        option.textContent = "Bus " + busId;
+        option.value = bus.key;
+        option.text = bus.key;
         busSelect.appendChild(option);
+
+        // Show all if "All" selected
+        if (busSelect.value === "all") {
+          marker.addTo(map);
+        }
       }
     });
+  });
+}
 
-    // ✅ When user selects a bus
-    document.getElementById("busSelect").addEventListener("change", (e) => {
-      const selectedBus = e.target.value;
+// =======================
+// Dropdown Filter
+// =======================
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("busSelect").addEventListener("change", e => {
+    let selected = e.target.value;
 
-      if (!selectedBus) {
-        if (activeMarker) {
-          map.removeLayer(activeMarker);
-          activeMarker = null;
-        }
-        return;
-      }
+    // Remove all markers
+    Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
 
-      // Listen to only that bus
-      db.ref("buses/" + selectedBus).on("value", (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
+    if (selected === "all") {
+      Object.values(busMarkers).forEach(marker => marker.addTo(map));
+    } else if (busMarkers[selected]) {
+      busMarkers[selected].addTo(map);
+      map.setView(busMarkers[selected].getLatLng(), 13);
+    }
+  });
+});
 
-        const { lat, lng } = data;
+// =======================
+// Start Bus Tracking (Admin/Student)
+// =======================
+function startBusTracking() {
+  initMap();
+  loadBusLocations();
+}
 
-        if (activeMarker) {
-          activeMarker.setLatLng([lat, lng]);
-        } else {
-          activeMarker = L.marker([lat, lng]).addTo(map)
-            .bindPopup(`Bus ${selectedBus}`);
-        }
+// =======================
+// Driver: Send Live Location
+// =======================
+function startDriverLocationUpdate(driverId) {
+  // First get assigned bus number for driver
+  firebase.database().ref("users/" + driverId + "/busNo").once("value").then(snapshot => {
+    let busNo = snapshot.val();
+    if (!busNo) {
+      alert("No bus assigned to this driver!");
+      return;
+    }
 
-        map.setView([lat, lng], 15); // Center map on bus
-      });
-    });
+    if (navigator.geolocation) {
+      setInterval(() => {
+        navigator.geolocation.getCurrentPosition(position => {
+          let lat = position.coords.latitude;
+          let lng = position.coords.longitude;
+
+          firebase.database().ref("busLocations/" + busNo).set({
+            lat: lat,
+            lng: lng,
+            driver: driverId,
+            updatedAt: new Date().toISOString()
+          });
+        });
+      }, 5000); // every 5 sec update
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  });
+}
 
 // Init
 window.onload = function () {
