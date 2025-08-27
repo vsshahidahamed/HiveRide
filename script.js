@@ -401,71 +401,7 @@ function initMapStudent() {
   });
 }
 
-// Populate dropdowns with drivers & students from Firebase
-function loadUsers() {
-  const driverSelect = document.getElementById("driverSelect");
-  const studentSelect = document.getElementById("studentSelect");
 
-  // Load Drivers
-  firebase.database().ref("drivers").once("value", (snapshot) => {
-    driverSelect.innerHTML = "";
-    snapshot.forEach((child) => {
-      let option = document.createElement("option");
-      option.value = child.key; // driverId
-      option.textContent = child.val().name + " (" + child.key + ")";
-      driverSelect.appendChild(option);
-    });
-  });
-
-  // Load Students
-  firebase.database().ref("students").once("value", (snapshot) => {
-    studentSelect.innerHTML = "";
-    snapshot.forEach((child) => {
-      let option = document.createElement("option");
-      option.value = child.key; // studentId
-      option.textContent = child.val().name + " (" + child.val().rollNo + ")";
-      studentSelect.appendChild(option);
-    });
-  });
-}
-
-// Assign bus to driver
-function assignBus() {
-  const driverId = document.getElementById("driverSelect").value;
-  const busNo = document.getElementById("busNumber").value;
-
-  if (!driverId || !busNo) {
-    alert("Please select driver and enter bus number.");
-    return;
-  }
-
-  // Save in drivers
-  firebase.database().ref("drivers/" + driverId).update({ busNo: busNo });
-
-  // Also link bus to driver
-  firebase.database().ref("buses/" + busNo).update({ driver: driverId });
-
-  alert("Bus assigned successfully to driver!");
-}
-
-// Assign bus to student
-function assignBusToStudent() {
-  const studentId = document.getElementById("studentSelect").value;
-  const busNo = document.getElementById("studentBusNumber").value;
-
-  if (!studentId || !busNo) {
-    alert("Please select student and enter bus number.");
-    return;
-  }
-
-  // Save in students
-  firebase.database().ref("students/" + studentId).update({ busNo: busNo });
-
-  alert("Bus assigned successfully to student!");
-}
-
-// Load users when page is ready
-window.onload = loadUsers;
 // Init
 window.onload = function () {
   initMap();
