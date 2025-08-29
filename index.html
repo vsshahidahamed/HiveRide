@@ -1,194 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Bus Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" />
+    <meta charset="UTF-8">
+    <title>HiveRide - Bus Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" />
 
-  <!-- ✅ Firebase v9 compat -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
-<h1>🚌 Bus Tracker Web App</h1>
+<h1>🚌 HiveRide Bus Tracker</h1>
 
-<!-- ✅ Auth Section -->
 <div id="auth-section" class="section">
-  <div id="register-section">
-    <h2>Register</h2>
-    <input id="reg-email" type="email" placeholder="Email" />
-    <input id="reg-password" type="password" placeholder="Password" />
-    <select id="reg-role">
-      <option value="student">Student</option>
-      <option value="driver">Driver</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button onclick="register()">Register</button>
-  </div>
+    <div id="register-section">
+        <h2>Register New Account</h2>
+        <input id="reg-email" type="email" placeholder="Email" />
+        <input id="reg-password" type="password" placeholder="Password" />
+        <select id="reg-role">
+            <option value="student">Student</option>
+            <option value="admin">Admin</option>
+            <option value="driver">Driver</option>
+        </select>
+        <button onclick="register()">Register</button>
+    </div>
 
-  <div id="login-section" style="display:none;">
-    <h2>Login</h2>
-    <input id="login-email" type="email" placeholder="Email" />
-    <input id="login-password" type="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-  </div>
+    <div id="login-section" style="display: none;">
+        <h2>Login</h2>
+        <input id="login-email" type="email" placeholder="Email" />
+        <input id="login-password" type="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+    </div>
 
-  <button onclick="googleSignIn()">Sign in with Google</button>
-  <button onclick="toggleAuth()">Switch to Login/Register</button>
+    <button onclick="googleSignIn()">Sign in with Google</button>
+    <button onclick="toggleAuthForms()">Switch to Login / Register</button>
 </div>
 
-<!-- ✅ Dashboard (Role-Based) -->
-<div id="dashboard" style="display:none;">
-  <h2>Welcome! <span id="user-role"></span></h2>
-  <button onclick="logout()">Logout</button>
-  <hr>
-
-  <!-- 🎓 Student Section -->
-  <div id="studentSection" style="display:none;">
-    <h3>🔍 Find Your Bus</h3>
-    <select id="bus-selector-student">
-      <option value="">-- Select a Bus --</option>
-    </select>
-    <div id="bus-info"></div>
+<div id="dashboard" style="display: none;">
+    <h2 id="user-role-display">Welcome!</h2>
+    <button onclick="logout()">Logout</button>
     <hr>
 
-    <h3>📅 Full Bus Schedule</h3>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Bus No</th>
-          <th>Route</th>
-          <th>Morning Time</th>
-          <th>Evening Time</th>
-          <th>Driver Name</th>
-          <th>Driver Mobile</th>
-        </tr>
-      </thead>
-      <tbody id="schedule-body-student"></tbody>
-    </table>
+    <div id="map-section" class="section">
+       <h3>📍 Live Bus Locations</h3>
+        <div id="map"></div>
+    </div>
+    <hr>
 
-    <h3>💰 Route Fees (View Only)</h3>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Route</th>
-          <th>Distance (km)</th>
-          <th>Fee (₹)</th>
-        </tr>
-      </thead>
-      <tbody id="fees-body-student"></tbody>
-    </table>
+    <div id="student-info-section" class="section" style="display: none;">
+        <h3>🔍 Find Your Bus</h3>
+        <select id="bus-selector" onchange="showBusDetails()">
+            <option value="">-- Select a Bus --</option>
+        </select>
+        <div id="bus-info" class="info-box"></div>
+        <hr>
 
-    <h3>💳 Check Fee Balance</h3>
-    <input id="student-search-roll" placeholder="Enter Roll No" />
-    <button onclick="checkMyFees()">Check</button>
-    <div id="my-fees-info"></div>
-  </div>
+        <h3>📅 Full Bus Schedule</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Bus No</th>
+              <th>Route</th> 
+              <th>Morning Time</th> 
+              <th>Evening Time</th> 
+              <th>Driver Name</th>
+              <th>Driver Mobile</th>
+            </tr>
+          </thead>
+          <tbody id="schedule-body-student"></tbody>
+        </table>
+        <hr>
 
-  <!-- 👨‍💼 Admin Section -->
-  <div id="adminSection" style="display:none;">
-    <h3>Admin Dashboard</h3>
-     <div id="map" style="height:400px;"></div>
-    <!-- Add/Edit Bus Schedule -->
-    <h4>➕ Add / Edit Bus Schedule</h4>
-    <input type="text" id="bus-no" placeholder="Bus Number">
-    <input type="text" id="bus-route" placeholder="Route Name">
-    <input type="text" id="morning-time" placeholder="Morning Time">
-    <input type="text" id="evening-time" placeholder="Evening Time">
-    <input type="text" id="driver-name" placeholder="Driver Name">
-    <input type="text" id="driver-mobile" placeholder="Driver Mobile">
-    <button onclick="addSchedule()">Save Schedule</button>
+        <h3>💰 Route Fees</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Route</th> 
+                    <th>Distance (km)</th> 
+                    <th>Fee (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="fees-body-student"></tbody>
+        </table>
+    </div>
+    
+    <div id="driver-location" class="section" style="display: none;">
+        <h3>📡 Send Live Location</h3>
+        <p id="driver-bus-no">Loading your assigned bus...</p>
+        <button onclick="sendLocation()">Start Sending Location</button>
+        <p id="location-status"></p>
+        <input type="hidden" id="busNumber">
+    </div>
 
-    <h4>📋 Current Schedule</h4>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Bus No</th>
-          <th>Route</th>
-          <th>Morning</th>
-          <th>Evening</th>
-          <th>Driver</th>
-          <th>Mobile</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="schedule-body"></tbody>
-    </table>
+    <div id="admin-controls" class="section" style="display: none;">
+        <h2>Admin Dashboard</h2>
+        
+        <div class="admin-subsection">
+            <h3>🎓 Student Management</h3>
+            <div id="student-management">
+                <h4>Add / Update Student</h4>
+                <form id="student-management-form">
+                    <input type="text" id="student-roll" placeholder="Student Roll No.">
+                    <input type="text" id="student-name" placeholder="Student Name">
+                    <input type="text" id="student-route" placeholder="Assigned Route">
+                    <input type="text" id="student-year" placeholder="Year of Study">
+                    <input type="number" id="student-balance" placeholder="Fee Balance (₹)">
+                </form>
+                <button onclick="saveStudent()">Save Student</button>
+            </div>
+            <div id="student-search">
+                <h4>Search for Student</h4>
+                <input type="text" id="search-roll" placeholder="Enter Student Roll No.">
+                <button onclick="searchStudent()">Search</button>
+                <div id="student-info-result"></div>
+            </div>
+        </div>
+        <hr>
+        
+        <div class="admin-subsection">
+            <h3>👨‍✈️ Driver Management</h3>
+            <h4>Add New Driver</h4>
+            <form id="driverForm" onsubmit="addDriver(); return false;">
+              <input type="text" id="driverName" placeholder="Driver Name" required>
+              <input type="text" id="busNo" placeholder="Assigned Bus No" required>
+              <input type="text" id="route" placeholder="Assigned Route" required>
+              <button type="submit">Add Driver</button>
+            </form>
+            <h4>Current Drivers</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Driver Name</th> 
+                  <th>Bus No</th> 
+                  <th>Route</th> 
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="driverTableBody"></tbody>
+            </table>
+        </div>
+        <hr>
+        
+        <div class="admin-subsection">
+            <h3>📅 Schedule Management</h3>
+            <h4>Add New Schedule</h4>
+            <form id="schedule-form">
+                <input type="text" id="bus-no" placeholder="Bus Number">
+                <input type="text" id="bus-route" placeholder="Route Name">
+                <input type="text" id="morning-time" placeholder="Morning Time">
+                <input type="text" id="evening-time" placeholder="Evening Time">
+                <input type="text" id="driver-name" placeholder="Driver Name">
+                <input type="text" id="driver-mobile" placeholder="Driver Mobile">
+            </form>
+            <button onclick="addSchedule()">Save Schedule</button>
+            
+            <h4>Current Schedule</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Bus No</th>
+                        <th>Route</th>
+                        <th>Morning</th>
+                        <th>Evening</th>
+                        <th>Driver</th>
+                        <th>Mobile</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-body-admin"></tbody>
+            </table>
+        </div>
+        <hr>
 
-    <!-- Routes & Fees -->
-    <h4>🛣️ Add Route & Fee</h4>
-    <input id="route-name" placeholder="Route Name" />
-    <input id="route-distance" type="number" placeholder="Distance (km)" />
-    <input id="route-fee" type="number" placeholder="Fee (₹)" />
-    <button onclick="addRoute()">Add Route</button>
-    <h4>Route fees</h4>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Route</th>
-          <th>Distance</th>
-          <th>Fee</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="fees-body"></tbody>
-    </table>
-
-    <!-- Student Fee Info -->
-    <h4>👩‍🎓 Add / Edit Student Fee Info</h4>
-    <input id="student-roll" placeholder="Roll No" />
-    <input id="student-name" placeholder="Student Name" />
-    <input id="student-route" placeholder="Route" />
-    <input id="student-year" placeholder="Year" />
-    <input id="student-balance" placeholder="Balance Fee (₹)" />
-    <button onclick="saveStudent()">Save Student</button>
-
-    <h4>Search Student</h4>
-    <input id="searchRoll" placeholder="Enter Roll No">
-    <button onclick="searchStudent()">Search</button>
-    <div id="studentDetails"></div>
-
-    <!-- Drivers -->
-    <h4>➕ Add New Driver</h4>
-    <input type="text" id="driverName" placeholder="Driver Name">
-    <input type="text" id="busNo" placeholder="Bus No">
-    <input type="text" id="route" placeholder="Route">
-    <button onclick="addDriver()">Add Driver</button>
-
-    <h4>Driver Details</h4>
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Driver Name</th>
-          <th>Bus No</th>
-          <th>Route</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="driverTableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- 🚍 Driver Section -->
-  <div id="driverSection" style="display:none;">
-    <h3>📡 Send Live Location</h3>
-    <p id="driver-bus-no">Loading your assigned bus...</p>
-    <button onclick="sendLocation()">Start Sending Location</button>
-    <p id="location-status"></p>
-  </div>
-  
-  <!-- 🗺️ Map -->
-  <div id="map-section" style="display:none;">
-    <h3>📍 Live Bus Locations</h3>
-    <div id="map"></div>
-  </div>
+        <div class="admin-subsection">
+            <h3>🛣️ Route & Fee Management</h3>
+            <h4>Add New Route</h4>
+            <form id="route-form">
+                <input id="route-name" placeholder="Route Name" />
+                <input id="route-distance" type="number" placeholder="Distance (km)" />
+                <input id="route-fee" type="number" placeholder="Fee (₹)" />
+            </form>
+            <button onclick="addRoute()">Add Route</button>
+            
+            <h4>Current Routes</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Route</th>
+                        <th>Distance (km)</th>
+                        <th>Fee (₹)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fees-body-admin"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>
