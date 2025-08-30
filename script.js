@@ -16,15 +16,11 @@ const db = firebase.database();
 
 // ---------------- AUTH ----------------
 
-function toggleAuth() {
-  document.getElementById("register-section").style.display =
-    document.getElementById("register-section").style.display === "none"
-      ? "block"
-      : "none";
-  document.getElementById("login-section").style.display =
-    document.getElementById("login-section").style.display === "none"
-      ? "block"
-      : "none";
+function toggleAuthForms() {
+    const reg = document.getElementById("register-section");
+    const log = document.getElementById("login-section");
+    reg.style.display = reg.style.display === "none" ? "block" : "none";
+    log.style.display = log.style.display === "none" ? "block" : "none";
 }
 
 function register() {
